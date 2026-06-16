@@ -13,6 +13,10 @@ module.exports = {
   // Core static pages with boosted priorities
   transform: async (config, path) => {
     const p = path.replace(/\/$/, "") || "/";
+    // Blog post pages — skip auto-crawl; they're added via additionalPaths with accurate lastmod
+    if (p.startsWith("/blog/")) {
+      return null;
+    }
     // Homepage — highest priority
     if (p === "/") {
       return { loc: path, changefreq: "daily", priority: 1.0, lastmod: new Date().toISOString() };
@@ -83,7 +87,7 @@ module.exports = {
           .from("blogs")
           .select("slug, updated_at, date");
         if (error) throw error;
-        blogPaths = data.map((item) => ({
+        blogPaths = data.filter((item) => item.slug && !/\s/.test(item.slug)).map((item) => ({
           loc: `${siteUrl}/blog/${item.slug}/`,
           lastmod: item.updated_at
             ? new Date(item.updated_at).toISOString()

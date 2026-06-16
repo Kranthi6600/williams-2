@@ -16,9 +16,11 @@ export async function getStaticPaths() {
       console.error("Error fetching posts or no posts found:", error);
       return { paths: [], fallback: "blocking" };
     }
-    const paths = posts.map((post) => ({
-      params: { slug: post.slug },
-    }));
+    const paths = posts
+      .filter((post) => post.slug && !/\s/.test(post.slug))
+      .map((post) => ({
+        params: { slug: post.slug },
+      }));
     return { paths, fallback: "blocking" };
   } catch (err) {
     console.error("Error in getStaticPaths:", err);
