@@ -15,7 +15,9 @@ export default function Sidebar() {
       try {
         const { data, error } = await supabase
           .from("blogs")
-          .select("title, thumbnail, slug, updated_at");
+          .select("title, thumbnail, slug, date")
+          .order("date", { ascending: false })
+          .limit(5);
         if (error) throw error;
         const recentPosts = data.map((post) => ({
           title: post.title,

@@ -5,30 +5,45 @@ import Cta from "../../components/Cta";
 import Div from "../../components/Div";
 import Layout from "../../components/Layout";
 import PageHeading from "../../components/PageHeading";
+import Pagination from "../../components/Pagination";
 import PostStyle2 from "../../components/Post/PostStyle2";
 import Sidebar from "../../components/Sidebar/index.jsx";
 import Spacing from "../../components/Spacing";
 
-export async function getServerSideProps() {
+const PAGE_SIZE = 10;
+
+export async function getServerSideProps({ query }) {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
-    const { data, error } = await supabase
+    const currentPage = Math.max(1, parseInt(query.page) || 1);
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error, count } = await supabase
       .from("blogs")
-      .select("slug, title, date, thumbnail")
-      .order("date", { ascending: false });
+      .select("slug, title, date, thumbnail", { count: "exact" })
+      .order("date", { ascending: false })
+      .range(from, to);
 
     if (error) throw error;
-    return { props: { posts: data || [] } };
+    return {
+      props: {
+        posts: data || [],
+        totalCount: count || 0,
+        currentPage,
+      },
+    };
   } catch (err) {
     console.error("Error fetching blogs:", err);
-    return { props: { posts: [] } };
+    return { props: { posts: [], totalCount: 0, currentPage: 1 } };
   }
 }
 
-export default function Blog({ posts }) {
+export default function Blog({ posts, totalCount, currentPage }) {
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   return (
     <>
       <Head>
@@ -106,6 +121,8 @@ export default function Blog({ posts }) {
                 <div>No blog posts available.</div>
               )}
               <Spacing lg="60" md="40" />
+              <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
+              <Spacing lg="40" md="20" />
             </Div>
             <Div className="col-xl-3 col-lg-4 offset-xl-1">
               <Spacing lg="0" md="80" />
